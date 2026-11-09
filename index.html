@@ -1,0 +1,497 @@
+
+<!DOCTYPE html>
+<html lang="en
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MY CRICKET STATS v10.0</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#061225;color:#eaf5ff;font-family:Arial,sans-serif;padding:14px}
+header{text-align:center;padding:15px}
+h1{color:#38cfff;font-size:24px}
+h2,h3{color:#38cfff}
+nav{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+button{border:1px solid #2477aa;background:#102b4b;color:white;border-radius:8px;padding:11px;cursor:pointer}
+nav button.active,.primary{background:#087fca}
+section{background:#0b1d35;border:1px solid #17466e;border-radius:12px;padding:14px;margin-bottom:13px}
+.hidden{display:none}
+input,select,textarea{width:100%;padding:11px;margin:6px 0 13px;background:#07172b;border:1px solid #23618b;border-radius:8px;color:white;font-size:15px}
+label{font-size:13px;color:#a9d6f3}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.stat{background:#102b4b;padding:12px;border-radius:9px;text-align:center;border:1px solid #17618d}
+.stat small{color:#b6d8f0}
+.stat strong{display:block;font-size:22px;color:#38cfff;margin-top:6px}
+.full{width:100%;margin:4px 0}
+.match{background:#102b4b;padding:12px;border-radius:9px;margin:10px 0}
+.match p{font-size:13px;color:#c0dced;line-height:1.5}
+.actions{display:flex;gap:8px}
+.actions button{flex:1}
+.chart svg{width:100%;height:auto}
+.chart text{fill:#c0dced;font-size:11px}
+.note{font-size:12px;color:#91b8d8}
+hr{border:0;border-top:1px solid #19476a;margin:15px 0}
+@media print{
+ body{background:white;color:black}
+ nav,.no-print,button{display:none!important}
+ section{background:white;color:black;border:1px solid #aaa;break-inside:avoid}
+ h1,h2,h3,.stat strong{color:#075c9b}
+ .stat{background:#f1f6fa}
+}
+</style>
+  <link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#101820">
+</head>
+  <script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js")
+    .then(() => console.log("MCS Ready"))
+    .catch(error => console.log(error));
+}
+  </script>
+<body>
+
+<header>
+<h1>🏏 MY CRICKET STATS</h1>
+<p>ULTIMATE EDITION • VERSION 10.0</p>
+</header>
+
+<nav class="no-print">
+<button class="active" onclick="showPage('dashboard',this)">Dashboard</button>
+<button onclick="showPage('add',this)">+ Match</button>
+<button onclick="showPage('history',this)">History</button>
+<button onclick="showPage('team',this)">Team</button>
+<button onclick="showPage('analytics',this)">Analytics</button>
+<button onclick="showPage('compare',this)">Compare</button>
+<button onclick="showPage('backup',this)">Backup</button>
+</nav>
+
+<section id="dashboard">
+<h2>Player Profile</h2>
+<label>Player name</label>
+<input id="playerName" placeholder="Enter your name">
+<button class="primary full" onclick="savePlayer()">Save Profile</button>
+<hr>
+<h2>Individual Career Statistics</h2>
+<div class="grid" id="career"></div>
+<hr>
+<h2>Best Records</h2>
+<div id="records"></div>
+</section>
+
+<section id="add" class="hidden">
+<h2 id="formHeading">Add Match</h2>
+<input id="editId" type="hidden">
+
+<label>Opponent / Team</label>
+<input id="opponent" placeholder="Opponent name">
+
+<label>Tournament</label>
+<input id="tournament" placeholder="Example: School Tournament">
+
+<label>Match date</label>
+<input id="date" type="date">
+
+<label>Match result</label>
+<select id="result">
+<option value="Not recorded">Not recorded</option>
+<option value="Win">Win</option>
+<option value="Loss">Loss</option>
+<option value="Tie">Tie</option>
+<option value="No Result">No Result</option>
+</select>
+
+<h3>🏏 Your Batting</h3>
+<div class="grid">
+<div><label>Runs</label><input id="runs" type="number" min="0" value="0"></div>
+<div><label>Balls faced</label><input id="faced" type="number" min="0" value="0"></div>
+<div><label>Fours</label><input id="fours" type="number" min="0" value="0"></div>
+<div><label>Sixes</label><input id="sixes" type="number" min="0" value="0"></div>
+</div>
+<label>Dismissal</label>
+<select id="dismissal">
+<option value="out">Out</option>
+<option value="notout">Not Out</option>
+<option value="didnotbat">Did Not Bat</option>
+</select>
+
+<h3>🎯 Your Bowling</h3>
+<div class="grid">
+<div><label>Legal balls</label><input id="balls" type="number" min="0" value="0"></div>
+<div><label>Maiden overs</label><input id="maidens" type="number" min="0" value="0"></div>
+<div><label>Runs conceded</label><input id="conceded" type="number" min="0" value="0"></div>
+<div><label>Wickets</label><input id="wickets" type="number" min="0" value="0"></div>
+</div>
+
+<h3>🧤 Your Fielding</h3>
+<div class="grid">
+<div><label>Catches</label><input id="catches" type="number" min="0" value="0"></div>
+<div><label>Run outs</label><input id="runouts" type="number" min="0" value="0"></div>
+</div>
+
+<hr>
+<h3>🏆 Team Scorecard</h3>
+<div class="grid">
+<div><label>Your team runs</label><input id="teamRuns" type="number" min="0" value="0"></div>
+<div><label>Your team wickets lost</label><input id="teamWickets" type="number" min="0" value="0"></div>
+<div><label>Opponent runs</label><input id="oppRuns" type="number" min="0" value="0"></div>
+<div><label>Opponent wickets lost</label><input id="oppWickets" type="number" min="0" value="0"></div>
+</div>
+<label>Overs played by your team (optional)</label>
+<input id="teamOvers" placeholder="Example: 20">
+<label>Overs played by opponent (optional)</label>
+<input id="oppOvers" placeholder="Example: 19.4">
+
+<button class="primary full" onclick="saveMatch()">Save Match</button>
+<button class="full" onclick="clearForm()">Clear Form</button>
+<p class="note">Enter legal balls, not overs, for your personal bowling figures. Example: 15 balls = 2.3 overs.</p>
+</section>
+
+<section id="history" class="hidden">
+<h2>Match History</h2>
+<div id="historyList"></div>
+</section>
+
+<section id="team" class="hidden">
+<h2>Team Performance</h2>
+<div class="grid" id="teamStats"></div>
+<hr>
+<h3>Team Match Records</h3>
+<div id="teamHistory"></div>
+</section>
+
+<section id="analytics" class="hidden">
+<h2>Performance Analytics</h2>
+<h3>Runs per match</h3>
+<div id="runsGraph" class="chart"></div>
+<hr>
+<h3>Wickets per match</h3>
+<div id="wicketsGraph" class="chart"></div>
+<hr>
+<h3>Monthly Performance</h3>
+<div id="monthly"></div>
+</section>
+
+<section id="compare" class="hidden">
+<h2>Performance Comparison</h2>
+<p class="note">Compare your performance in two tournaments or periods.</p>
+<label>First tournament / period</label>
+<select id="periodA"></select>
+<label>Second tournament / period</label>
+<select id="periodB"></select>
+<button class="primary full" onclick="comparePeriods()">Compare</button>
+<div id="comparison"></div>
+</section>
+
+<section id="backup" class="hidden">
+<h2>Data Backup & Reports</h2>
+<p>Download a backup of your match records to keep them safe.</p>
+<button class="primary full" onclick="downloadBackup()">Download Backup</button>
+<hr>
+<label>Restore a previous backup JSON file</label>
+<input id="restoreFile" type="file" accept=".json,application/json">
+<button class="full" onclick="restoreBackup()">Restore Backup</button>
+<hr>
+<h3>Career Report</h3>
+<p class="note">Use your browser's Print option and choose Save as PDF.</p>
+<button class="primary full" onclick="printReport()">Print / Save as PDF</button>
+<hr>
+<p class="note">Data is stored locally in this browser. Download backups regularly. Clearing browser data may erase records.</p>
+</section>
+
+<script>
+const STORE="cricketV10Data";
+let data={matches:[],player:""};
+
+function loadData(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(STORE));
+  if(saved&&Array.isArray(saved.matches)){
+   data=saved;
+   return;
+  }
+ }catch(e){}
+ // Import old v3.0 records if no v10 data exists.
+ try{
+  const old=JSON.parse(localStorage.getItem("cricketMatches")||"[]");
+  if(Array.isArray(old)){
+   data.matches=old.map(m=>({
+    id:String(m.id||Date.now()+Math.random()),
+    opponent:m.opponent||"Previous match",
+    tournament:"Previous records",
+    date:m.date||"",
+    result:"Not recorded",
+    runs:+m.runs||0,faced:+m.faced||0,
+    fours:+m.fours||0,sixes:+m.sixes||0,
+    dismissal:m.dismissal||"out",
+    balls:+m.balls||0,maidens:+m.maidens||0,
+    conceded:+m.conceded||0,wickets:+m.wickets||0,
+    catches:+m.catches||0,runouts:+m.runouts||0,
+    teamRuns:0,teamWickets:0,oppRuns:0,oppWickets:0,
+    teamOvers:"",oppOvers:""
+   }));
+  }
+  data.player=localStorage.getItem("cricketPlayer")||"";
+  save();
+ }catch(e){}
+}
+function save(){
+ localStorage.setItem(STORE,JSON.stringify(data));
+}
+function el(id){return document.getElementById(id)}
+function n(id){return Math.max(0,Number(el(id).value)||0)}
+function sum(key,list=data.matches){
+ return list.reduce((a,m)=>a+(Number(m[key])||0),0);
+}
+function showPage(id,button){
+ document.querySelectorAll("body > section").forEach(s=>s.classList.add("hidden"));
+ el(id).classList.remove("hidden");
+ document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+ if(button)button.classList.add("active");
+ renderAll();
+}
+function savePlayer(){
+ data.player=el("playerName").value.trim();
+ save();
+ alert("Player profile saved!");
+}
+function overs(b){
+ return Math.floor(b/6)+"."+(b%6);
+}
+function average(list){
+ const runs=sum("runs",list);
+ const outs=list.filter(m=>m.dismissal==="out").length;
+ return outs?(runs/outs).toFixed(2):"—";
+}
+function strikeRate(list){
+ const balls=sum("faced",list);
+ return balls?(sum("runs",list)*100/balls).toFixed(2):"—";
+}
+function economy(list){
+ const balls=sum("balls",list);
+ return balls?(sum("conceded",list)*6/balls).toFixed(2):"—";
+}
+function saveMatch(){
+ const opponent=el("opponent").value.trim();
+ if(!opponent){alert("Enter opponent name.");return;}
+ const m={
+  id:el("editId").value||String(Date.now()),
+  opponent,tournament:el("tournament").value.trim()||"Friendly",
+  date:el("date").value,
+  result:el("result").value,
+  runs:n("runs"),faced:n("faced"),fours:n("fours"),sixes:n("sixes"),
+  dismissal:el("dismissal").value,
+  balls:n("balls"),maidens:n("maidens"),conceded:n("conceded"),
+  wickets:n("wickets"),catches:n("catches"),runouts:n("runouts"),
+  teamRuns:n("teamRuns"),teamWickets:n("teamWickets"),
+  oppRuns:n("oppRuns"),oppWickets:n("oppWickets"),
+  teamOvers:el("teamOvers").value.trim(),
+  oppOvers:el("oppOvers").value.trim()
+ };
+ if(m.dismissal==="didnotbat"&&(m.runs||m.faced||m.fours||m.sixes)){
+  alert("Did Not Bat must have zero batting figures.");return;
+ }
+ if(m.fours+m.sixes>m.faced){
+  alert("Fours and sixes cannot exceed balls faced.");return;
+ }
+ if(m.maidens>Math.floor(m.balls/6)){
+  alert("Maiden overs cannot exceed completed overs.");return;
+ }
+ if(m.dismissal!=="didnotbat"&&m.faced===0&&m.runs>0){
+  alert("Enter balls faced.");return;
+ }
+ const i=data.matches.findIndex(x=>String(x.id)===String(m.id));
+ if(i>=0)data.matches[i]=m;else data.matches.push(m);
+ save();clearForm();
+ alert("Match saved!");
+ showPage("dashboard",document.querySelector("nav button"));
+}
+function clearForm(){
+ ["editId","opponent","tournament","runs","faced","fours","sixes",
+ "balls","maidens","conceded","wickets","catches","runouts",
+ "teamRuns","teamWickets","oppRuns","oppWickets","teamOvers","oppOvers"]
+ .forEach(id=>el(id).value="");
+ ["runs","faced","fours","sixes","balls","maidens","conceded","wickets",
+ "catches","runouts","teamRuns","teamWickets","oppRuns","oppWickets"]
+ .forEach(id=>el(id).value=0);
+ el("date").value=new Date().toISOString().slice(0,10);
+ el("dismissal").value="out";
+ el("result").value="Not recorded";
+ el("formHeading").textContent="Add Match";
+}
+function editMatch(id){
+ const m=data.matches.find(x=>String(x.id)===String(id));
+ if(!m)return;
+ showPage("add",document.querySelectorAll("nav button")[1]);
+ el("formHeading").textContent="Edit Match";
+ Object.keys(m).forEach(k=>{if(el(k))el(k).value=m[k]??"";});
+ el("editId").value=m.id;
+}
+function deleteMatch(id){
+ if(!confirm("Delete this match permanently?"))return;
+ data.matches=data.matches.filter(m=>String(m.id)!==String(id));
+ save();renderAll();
+}
+function safe(v){
+ return String(v??"").replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
+function stat(name,value){
+ return `<div class="stat"><small>${name}</small><strong>${value}</strong></div>`;
+}
+function renderDashboard(){
+ const list=data.matches.filter(m=>m.dismissal!=="didnotbat");
+ const wickets=sum("wickets");
+ const balls=sum("balls");
+ const conceded=sum("conceded");
+ const highest=data.matches.length?Math.max(...data.matches.map(m=>m.runs)):0;
+ const bestW=data.matches.length?Math.max(...data.matches.map(m=>m.wickets)):0;
+ el("career").innerHTML=[
+  stat("Matches",data.matches.length),
+  stat("Innings",list.length),
+  stat("Runs",sum("runs")),
+  stat("Highest",highest),
+  stat("Not Outs",list.filter(m=>m.dismissal==="notout").length),
+  stat("Average",average(data.matches)),
+  stat("Strike Rate",strikeRate(data.matches)),
+  stat("Fours",sum("fours")),
+  stat("Sixes",sum("sixes")),
+  stat("50s",list.filter(m=>m.runs>=50&&m.runs<100).length),
+  stat("100s",list.filter(m=>m.runs>=100).length),
+  stat("Wickets",wickets),
+  stat("Overs",overs(balls)),
+  stat("Economy",economy(data.matches)),
+  stat("Bowling Average",wickets?(conceded/wickets).toFixed(2):"—"),
+  stat("Maidens",sum("maidens")),
+  stat("Catches",sum("catches")),
+  stat("Run Outs",sum("runouts"))
+ ].join("");
+ const bestBat=data.matches.reduce((a,m)=>m.runs>a.runs?m:a,{runs:0});
+ const bestBowl=data.matches.reduce((a,m)=>m.wickets>a.wickets?m:a,{wickets:0});
+ el("records").innerHTML=
+ `<p>🏏 Best score: <b>${bestBat.runs}</b> (${safe(bestBat.opponent||"—")})</p>
+  <p>🎯 Most wickets: <b>${bestBowl.wickets}</b> (${safe(bestBowl.opponent||"—")})</p>`;
+}
+function renderHistory(){
+ el("historyList").innerHTML=data.matches.length?[...data.matches].reverse().map(m=>`
+ <div class="match">
+ <h3>${safe(m.opponent)}</h3>
+ <p>${safe(m.date)} • ${safe(m.tournament)}</p>
+ <p>Individual: ${m.runs} runs (${m.faced} balls), ${m.wickets} wickets, ${m.conceded} runs conceded</p>
+ <p>Team: ${m.teamRuns}/${m.teamWickets} vs ${m.oppRuns}/${m.oppWickets} • ${safe(m.result)}</p>
+ <div class="actions no-print">
+ <button onclick="editMatch('${safe(m.id)}')">Edit</button>
+ <button onclick="deleteMatch('${safe(m.id)}')">Delete</button>
+ </div></div>`).join(""):"<p>No matches added yet.</p>";
+}
+function renderTeam(){
+ const wins=data.matches.filter(m=>m.result==="Win").length;
+ const losses=data.matches.filter(m=>m.result==="Loss").length;
+ const ties=data.matches.filter(m=>m.result==="Tie").length;
+ const nr=data.matches.filter(m=>m.result==="No Result").length;
+ el("teamStats").innerHTML=[
+  stat("Matches",data.matches.length),stat("Wins",wins),
+  stat("Losses",losses),stat("Ties",ties),
+  stat("No Result",nr),
+  stat("Win %",data.matches.length?(wins/data.matches.length*100).toFixed(1)+"%":"—"),
+  stat("Team Runs",sum("teamRuns")),
+  stat("Opponent Runs",sum("oppRuns"))
+ ].join("");
+ el("teamHistory").innerHTML=data.matches.length?[...data.matches].reverse().map(m=>
+ `<div class="match"><b>${safe(m.tournament)}</b>
+ <p>${safe(m.opponent)} • ${safe(m.date)}</p>
+ <p>Your team: ${m.teamRuns}/${m.teamWickets} • Opponent: ${m.oppRuns}/${m.oppWickets}</p>
+ <p>Result: <b>${safe(m.result)}</b></p></div>`
+ ).join(""):"<p>No team matches yet.</p>";
+}
+function drawGraph(target,key,title){
+ const list=[...data.matches].sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ if(!list.length){el(target).innerHTML="<p>No match data yet.</p>";return;}
+ const W=320,H=190,L=28,R=10,T=22,B=35;
+ const max=Math.max(1,...list.map(m=>Number(m[key])||0));
+ const x=i=>L+(list.length===1?(W-L-R)/2:i*(W-L-R)/(list.length-1));
+ const y=v=>H-B-(v/max)*(H-T-B);
+ const pts=list.map((m,i)=>`${x(i)},${y(+m[key]||0)}`).join(" ");
+ const dots=list.map((m,i)=>`<circle cx="${x(i)}" cy="${y(+m[key]||0)}" r="4" fill="#38cfff"/>
+ <text x="${x(i)}" y="${y(+m[key]||0)-9}" text-anchor="middle">${+m[key]||0}</text>
+ <text x="${x(i)}" y="${H-10}" text-anchor="middle">${i+1}</text>`).join("");
+ el(target).innerHTML=`<svg viewBox="0 0 ${W} ${H}">
+ <text x="${L}" y="13">${title}</text>
+ <line x1="${L}" y1="${T}" x2="${L}" y2="${H-B}" stroke="#47718e"/>
+ <line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="#47718e"/>
+ <polyline points="${pts}" fill="none" stroke="#38cfff" stroke-width="3"/>
+ ${dots}</svg><p class="note">Matches shown oldest to newest.</p>`;
+}
+function renderAnalytics(){
+ drawGraph("runsGraph","runs","Runs per match");
+ drawGraph("wicketsGraph","wickets","Wickets per match");
+ const months={};
+ data.matches.forEach(m=>{
+  const key=m.date?m.date.slice(0,7):"Date not set";
+  if(!months[key])months[key]={matches:0,runs:0,wickets:0};
+  months[key].matches++;months[key].runs+=m.runs;months[key].wickets+=m.wickets;
+ });
+ el("monthly").innerHTML=Object.keys(months).sort().reverse().map(k=>
+ `<div class="match"><b>${safe(k)}</b><p>${months[k].matches} matches • ${months[k].runs} runs • ${months[k].wickets} wickets</p></div>`
+ ).join("")||"<p>No monthly data yet.</p>";
+}
+function renderCompareOptions(){
+ const names=[...new Set(data.matches.map(m=>m.tournament||"Friendly"))];
+ const opts=names.map(x=>`<option>${safe(x)}</option>`).join("");
+ el("periodA").innerHTML=opts;el("periodB").innerHTML=opts;
+}
+function comparePeriods(){
+ const a=data.matches.filter(m=>m.tournament===el("periodA").value);
+ const b=data.matches.filter(m=>m.tournament===el("periodB").value);
+ if(!a.length||!b.length){el("comparison").innerHTML="<p>Add matches in both periods first.</p>";return;}
+ el("comparison").innerHTML=`
+ <div class="grid">
+ <div class="stat"><b>${safe(el("periodA").value)}</b>
+ <strong>${sum("runs",a)}</strong><small>Runs • ${sum("wickets",a)} wickets</small>
+ <p>${a.length} matches</p></div>
+ <div class="stat"><b>${safe(el("periodB").value)}</b>
+ <strong>${sum("runs",b)}</strong><small>Runs • ${sum("wickets",b)} wickets</small>
+ <p>${b.length} matches</p></div></div>
+ <p>First period batting average: ${average(a)}</p>
+ <p>Second period batting average: ${average(b)}</p>
+ <p>First period strike rate: ${strikeRate(a)}</p>
+ <p>Second period strike rate: ${strikeRate(b)}</p>`;
+}
+function renderAll(){
+ el("playerName").value=data.player||"";
+ renderDashboard();renderHistory();renderTeam();renderAnalytics();renderCompareOptions();
+}
+function downloadBackup(){
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;a.download="my_cricket_stats_backup.json";a.click();
+ URL.revokeObjectURL(url);
+}
+function restoreBackup(){
+ const file=el("restoreFile").files[0];
+ if(!file){alert("Choose a backup JSON file first.");return;}
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const restored=JSON.parse(reader.result);
+   if(!restored||!Array.isArray(restored.matches))throw Error("Invalid backup");
+   if(!confirm("Restoring will replace the current v10.0 records. Continue?"))return;
+   data={matches:restored.matches,player:restored.player||""};
+   save();renderAll();alert("Backup restored.");
+  }catch(e){alert("This backup file is not valid.");}
+ };
+ reader.readAsText(file);
+}
+function printReport(){
+ renderAll();
+ window.print();
+}
+loadData();
+el("playerName").value=data.player||"";
+el("date").value=new Date().toISOString().slice(0,10);
+renderAll();
+</script>
+</body>
+</html>
